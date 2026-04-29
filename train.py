@@ -1,6 +1,10 @@
-import mlflow
 import os
+import mlflow
 import numpy as np
+
+# 🔥 FORCE FIX (critical)
+os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+os.environ["MLFLOW_HTTP_REQUEST_HEADER_ngrok-skip-browser-warning"] = "true"
 
 mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
 mlflow.set_experiment("github-actions-exp")
