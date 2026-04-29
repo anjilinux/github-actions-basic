@@ -13,41 +13,76 @@ env:
 
 jobs:
 
+  # 🔹 TRAIN JOB
   train:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Checkout
-      uses: actions/checkout@v4
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
 
-    - name: 🐍 Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
 
-    - name: 📦 Install dependencies
-      run: pip install -r requirements.txt
+      - name: 📦 Install dependencies
+        run: pip install -r requirements.txt
 
-    # 🔍 DEBUG STEP (correct placement)
-    - name: 🔍 Debug env + boto3
-      run: |
-        echo "MLFLOW URI: $MLFLOW_TRACKING_URI"
-        python -c "import boto3; print('boto3 ok')"
+      - name: 🔍 Debug env + boto3
+        run: |
+          echo "MLFLOW URI: $MLFLOW_TRACKING_URI"
+          python -c "import boto3; print('boto3 ok')"
 
-    # 🔍 TEST S3 ACCESS
-    - name: 🔍 Test S3 access
-      run: |
-        python -c "
+      - name: 🔍 Test S3 access
+        run: |
+          python - <<EOF
 import boto3
 s3 = boto3.client('s3')
 print([b['Name'] for b in s3.list_buckets()['Buckets']])
-"
+EOF
 
-    - name: 🚀 Train + log to MLflow
-      run: python train.py
+      - name: 🚀 Train + log to MLflow
+        run: python train.py
 
-    - name: 📦 Upload model artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: model
-        path: model.txt
+      - name: 📦 Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: model
+          path: model.txt
+
+
+  # 🔹 EVALUATE JOB
+  evaluate:
+    needs: train
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: 📦 Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: 📥 Download model
+        uses: actions/download-artifact@v4
+        with:
+          name: model
+
+      - name: 📊 Evaluate model
+        run: python evaluate.py
+
+
+  # 🔹 DEPLOY JOB
+  deploy:
+    needs: evaluate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🚀 Deploy
+        run: echo "Deploying model..."
