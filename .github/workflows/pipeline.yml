@@ -4,6 +4,9 @@ on:
   push:
     branches: [ "main" ]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   run-ml:
     runs-on: ubuntu-latest
@@ -22,9 +25,3 @@ jobs:
 
     - name: Run training
       run: python train.py
-
-    - name: Upload model artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: trained-model
-        path: model.txt
