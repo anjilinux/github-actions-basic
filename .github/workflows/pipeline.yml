@@ -1,4 +1,4 @@
-name: Advanced ML Pipeline
+name: Multi-Stage ML Pipeline
 
 on:
   push:
@@ -8,11 +8,13 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  ml-pipeline:
+
+  # 🔹 JOB 1: TRAIN
+  train:
     runs-on: ubuntu-latest
 
     steps:
-    - name: 📥 Checkout code
+    - name: 📥 Checkout
       uses: actions/checkout@v4
 
     - name: 🐍 Setup Python
@@ -20,29 +22,50 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: 📦 Install dependencies
+    - name: 📦 Install deps
       run: pip install -r requirements.txt
 
-    # 🔹 TRAIN
     - name: 🚀 Train model
       run: python train.py
 
-    # 🔹 EVALUATE (GATE)
-    - name: 📊 Evaluate model
-      run: python evaluate.py
-
-    # 🔹 SAVE MODEL (ONLY IF ABOVE PASSES)
-    - name: 📦 Upload model artifact
-      if: success()
+    - name: 📦 Upload model
       uses: actions/upload-artifact@v4
       with:
-        name: trained-model
+        name: model
         path: model.txt
 
-    # 🔹 SAVE METRICS
-    - name: 📊 Upload metrics
-      if: success()
-      uses: actions/upload-artifact@v4
+
+  # 🔹 JOB 2: EVALUATE
+  evaluate:
+    needs: train   # 👈 depends on train job
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 📥 Checkout
+      uses: actions/checkout@v4
+
+    - name: 🐍 Setup Python
+      uses: actions/setup-python@v5
       with:
-        name: metrics
-        path: metrics.txt
+        python-version: "3.10"
+
+    - name: 📦 Install deps
+      run: pip install -r requirements.txt
+
+    - name: 📥 Download model
+      uses: actions/download-artifact@v4
+      with:
+        name: model
+
+    - name: 📊 Evaluate
+      run: python evaluate.py
+
+
+  # 🔹 JOB 3: DEPLOY
+  deploy:
+    needs: evaluate   # 👈 only runs if evaluate SUCCESS
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🚀 Deploy model
+      run: echo "Deploying model..."
