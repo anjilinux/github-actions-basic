@@ -1,10 +1,15 @@
+import numpy as np
+
 print("🚀 Training started...")
+
+# fake training
+data = np.random.rand(5)
 
 for i in range(3):
     print(f"Epoch {i+1} complete")
 
-# simulate model output
+# save model (dummy file)
 with open("model.txt", "w") as f:
-    f.write("fake trained model v1")
+    f.write(str(data))
 
 print("✅ Training finished + model saved")
