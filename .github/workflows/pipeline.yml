@@ -7,10 +7,12 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MLFLOW_TRACKING_URI: https://iron-swinging-fall.ngrok-free.dev
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
 jobs:
 
-  # 🔹 TRAIN JOB
   train:
     runs-on: ubuntu-latest
 
@@ -26,6 +28,21 @@ jobs:
     - name: 📦 Install dependencies
       run: pip install -r requirements.txt
 
+    # 🔍 DEBUG STEP (correct placement)
+    - name: 🔍 Debug env + boto3
+      run: |
+        echo "MLFLOW URI: $MLFLOW_TRACKING_URI"
+        python -c "import boto3; print('boto3 ok')"
+
+    # 🔍 TEST S3 ACCESS
+    - name: 🔍 Test S3 access
+      run: |
+        python -c "
+import boto3
+s3 = boto3.client('s3')
+print([b['Name'] for b in s3.list_buckets()['Buckets']])
+"
+
     - name: 🚀 Train + log to MLflow
       run: python train.py
 
@@ -34,41 +51,3 @@ jobs:
       with:
         name: model
         path: model.txt
-
-
-  # 🔹 EVALUATE JOB
-  evaluate:
-    needs: train
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: 📥 Checkout
-      uses: actions/checkout@v4
-
-    - name: 🐍 Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.10"
-
-    - name: 📦 Install dependencies
-      run: pip install -r requirements.txt
-
-    - name: 📥 Download model
-      uses: actions/download-artifact@v4
-      with:
-        name: model
-
-    - name: 📊 Evaluate model
-      run: python evaluate.py
-
-
-  # 🔹 DEPLOY JOB
-  deploy:
-    needs: evaluate
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: 🚀 Deploy
-      run: echo "Deploying model..."
-
-
