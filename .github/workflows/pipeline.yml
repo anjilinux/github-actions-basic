@@ -12,6 +12,7 @@ env:
   AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
 jobs:
+
   train:
     runs-on: ubuntu-latest
 
@@ -30,6 +31,7 @@ jobs:
       - name: Debug env
         run: |
           echo "MLFLOW URI: $MLFLOW_TRACKING_URI"
+          echo "AWS REGION: $AWS_DEFAULT_REGION"
           python -c "import boto3; print('boto3 ok')"
 
       - name: Test S3 access
@@ -43,6 +45,7 @@ jobs:
         with:
           name: model
           path: model.txt
+
 
   evaluate:
     needs: train
@@ -67,6 +70,7 @@ jobs:
 
       - name: Evaluate
         run: python evaluate.py
+
 
   deploy:
     needs: evaluate
