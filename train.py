@@ -1,10 +1,10 @@
-
 print("🚀 Training started...")
 
-# fake training
 for i in range(3):
     print(f"Epoch {i+1} complete")
 
-print("✅ Training finished")
+# simulate model output
+with open("model.txt", "w") as f:
+    f.write("fake trained model v1")
 
-
+print("✅ Training finished + model saved")
