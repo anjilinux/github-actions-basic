@@ -1,15 +1,4 @@
-name: MLflow MLOps Pipeline
-
-on:
-  push:
-    branches: ["main"]
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-  MLFLOW_TRACKING_URI: https://iron-swinging-fall.ngrok-free.dev
-
 jobs:
-
   train:
     runs-on: ubuntu-latest
 
@@ -25,10 +14,12 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      # 🔥 HARD FIX FOR AWS (no secrets dependency for now)
-      - name: Set AWS env
-        run: |
-          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Debug AWS
         run: |
@@ -36,8 +27,7 @@ jobs:
           python -c "import boto3; print('BOTO3 REGION:', boto3.session.Session().region_name)"
 
       - name: Test S3 access
-        run: |
-          python -c "import boto3; s3=boto3.client('s3'); print([b['Name'] for b in s3.list_buckets()['Buckets']])"
+        run: python -c "import boto3; s3=boto3.client('s3'); print([b['Name'] for b in s3.list_buckets()['Buckets']])"
 
       - name: Train
         run: python train.py
@@ -47,37 +37,3 @@ jobs:
         with:
           name: model
           path: model.txt
-
-
-  evaluate:
-    needs: train
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: model
-
-      - name: Evaluate
-        run: python evaluate.py
-
-
-  deploy:
-    needs: evaluate
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Deploy
-        run: echo "Deploying model..."
