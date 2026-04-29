@@ -2,7 +2,7 @@ name: MLflow MLOps Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -12,77 +12,66 @@ env:
   AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
 jobs:
-
-  # 🔹 TRAIN JOB
   train:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🐍 Setup Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: 🔍 Debug env + boto3
+      - name: Debug env
         run: |
           echo "MLFLOW URI: $MLFLOW_TRACKING_URI"
           python -c "import boto3; print('boto3 ok')"
 
-      - name: 🔍 Test S3 access
-        run: |
-          python - <<EOF
-import boto3
-s3 = boto3.client('s3')
-print([b['Name'] for b in s3.list_buckets()['Buckets']])
-EOF
+      - name: Test S3 access
+        run: python -c "import boto3; s3=boto3.client('s3'); print([b['Name'] for b in s3.list_buckets()['Buckets']])"
 
-      - name: 🚀 Train + log to MLflow
+      - name: Train
         run: python train.py
 
-      - name: 📦 Upload model artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: model
           path: model.txt
 
-
-  # 🔹 EVALUATE JOB
   evaluate:
     needs: train
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🐍 Setup Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      - name: 📦 Install dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: 📥 Download model
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: model
 
-      - name: 📊 Evaluate model
+      - name: Evaluate
         run: python evaluate.py
 
-
-  # 🔹 DEPLOY JOB
   deploy:
     needs: evaluate
     runs-on: ubuntu-latest
 
     steps:
-      - name: 🚀 Deploy
+      - name: Deploy
         run: echo "Deploying model..."
