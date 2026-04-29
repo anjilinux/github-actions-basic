@@ -1,4 +1,4 @@
-name: Multi-Stage ML Pipeline
+name: MLflow MLOps Pipeline
 
 on:
   push:
@@ -6,10 +6,11 @@ on:
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  MLFLOW_TRACKING_URI: https://iron-swinging-fall.ngrok-free.dev
 
 jobs:
 
-  # 🔹 JOB 1: TRAIN
+  # 🔹 TRAIN JOB
   train:
     runs-on: ubuntu-latest
 
@@ -22,22 +23,22 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: 📦 Install deps
+    - name: 📦 Install dependencies
       run: pip install -r requirements.txt
 
-    - name: 🚀 Train model
+    - name: 🚀 Train + log to MLflow
       run: python train.py
 
-    - name: 📦 Upload model
+    - name: 📦 Upload model artifact
       uses: actions/upload-artifact@v4
       with:
         name: model
         path: model.txt
 
 
-  # 🔹 JOB 2: EVALUATE
+  # 🔹 EVALUATE JOB
   evaluate:
-    needs: train   # 👈 depends on train job
+    needs: train
     runs-on: ubuntu-latest
 
     steps:
@@ -49,7 +50,7 @@ jobs:
       with:
         python-version: "3.10"
 
-    - name: 📦 Install deps
+    - name: 📦 Install dependencies
       run: pip install -r requirements.txt
 
     - name: 📥 Download model
@@ -57,15 +58,15 @@ jobs:
       with:
         name: model
 
-    - name: 📊 Evaluate
+    - name: 📊 Evaluate model
       run: python evaluate.py
 
 
-  # 🔹 JOB 3: DEPLOY
+  # 🔹 DEPLOY JOB
   deploy:
-    needs: evaluate   # 👈 only runs if evaluate SUCCESS
+    needs: evaluate
     runs-on: ubuntu-latest
 
     steps:
-    - name: 🚀 Deploy model
+    - name: 🚀 Deploy
       run: echo "Deploying model..."
