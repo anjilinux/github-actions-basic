@@ -7,9 +7,6 @@ on:
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   MLFLOW_TRACKING_URI: https://iron-swinging-fall.ngrok-free.dev
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  AWS_DEFAULT_REGION: ${{ secrets.AWS_DEFAULT_REGION }}
 
 jobs:
 
@@ -28,12 +25,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: 🔍 Debug AWS
+      # 🔥 HARD FIX FOR AWS (no secrets dependency for now)
+      - name: Set AWS env
         run: |
-          echo "Region: $AWS_DEFAULT_REGION"
-          python -c "import boto3; print('Region from boto3:', boto3.session.Session().region_name)"
+          echo "AWS_DEFAULT_REGION=us-east-1" >> $GITHUB_ENV
 
-      - name: 🔍 Test S3 access
+      - name: Debug AWS
+        run: |
+          echo "ENV REGION: $AWS_DEFAULT_REGION"
+          python -c "import boto3; print('BOTO3 REGION:', boto3.session.Session().region_name)"
+
+      - name: Test S3 access
         run: |
           python -c "import boto3; s3=boto3.client('s3'); print([b['Name'] for b in s3.list_buckets()['Buckets']])"
 
