@@ -1,15 +1,11 @@
-import numpy as np
+import mlflow
+import os
 
-print("🚀 Training started...")
+mlflow.set_tracking_uri(os.environ["MLFLOW_TRACKING_URI"])
+mlflow.set_experiment("github-actions-exp")
 
-# fake training
-data = np.random.rand(5)
+with mlflow.start_run():
+    mlflow.log_param("epochs", 3)
+    mlflow.log_metric("accuracy", 0.9)
 
-for i in range(3):
-    print(f"Epoch {i+1} complete")
-
-# save model (dummy file)
-with open("model.txt", "w") as f:
-    f.write(str(data))
-
-print("✅ Training finished + model saved")
+print("✅ Logged to MLflow")
